@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Job Applications Tracker</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Include jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.18/jspdf.plugin.autotable.min.js"></script>
+    <!-- Include jsPDF AutoTable plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+    <!-- Include SheetJS for Excel Export -->
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f8f9fa;
+        color: #343a40;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin-top: 40px;
+      }
+
+      .tabs {
+        margin-bottom: 20px;
+      }
+
+      .tabs button {
+        border: none;
+        padding: 15px;
+        font-size: 18px;
+        margin: 0 10px;
+        cursor: pointer;
+        background-color: #007bff;
+        color: white;
+        border-radius: 8px;
+        transition: background-color 0.3s ease;
+      }
+
+      .tabs button:hover {
+        background-color: #0056b3;
+      }
+
+      .tabs .active {
+        background-color: #0056b3;
+      }
+
+      .total {
+        font-size: 20px;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 15px;
+      }
+
+      .table th,
+      .table td {
+        text-align: center;
+        vertical-align: middle;
+      }
+
+      .footer {
+        text-align: center;
+        font-size: 14px;
+        color: #777;
+        margin-top: 50px;
+      }
+
+      /* Hide inactive sections by default */
+      .section {
+        display: none;
+      }
+
+      /* Show active section */
+      .active-section {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="text-center">Job Application Tracker</h1>
+
+      <div class="tabs d-flex justify-content-center">
+        <button id="todayTab" onclick="switchTab('today')" class="active">
+          Jobs Applied Today
+        </button>
+        <button id="overallTab" onclick="switchTab('overall')">
+          Overall Jobs Applied
+        </button>
+      </div>
+
+      <div class="d-flex justify-content-center mb-3">
+        <button id="downloadPdfBtn" class="btn btn-primary mr-2">
+          Download as PDF
+        </button>
+        <button id="downloadExcelBtn" class="btn btn-success">
+          Download as Excel
+        </button>
+      </div>
+
+      <!-- Jobs Applied Today Section -->
+      <div id="todaySection" class="section active-section">
+        <div class="total" id="todayTotal">Total: 0</div>
+        <table id="todayJobsTable" class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>Company Name</th>
+              <th>Role</th>
+              <th>Location</th>
+              <th>Experience</th>
+              <th>Employee Count</th>
+              <th>Score</th>
+              <th>HR</th>
+              <th>Applied On</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Jobs applied today will be populated here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Overall Jobs Applied Section -->
+      <div id="overallSection" class="section">
+        <div class="total" id="overallTotal">Total: 0</div>
+        <table id="overallJobsTable" class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>Company Name</th>
+              <th>Role</th>
+              <th>Location</th>
+              <th>Experience</th>
+              <th>Employee Count</th>
+              <th>Score</th>
+              <th>HR</th>
+              <th>Applied On</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Overall jobs will be populated here -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footer">
+        <p>&copy; 2024 Job Tracker. All rights reserved.</p>
+      </div>
+    </div>
+
+    <script>
+      // Function to fetch job data
+      async function fetchJobsData() {
+        try {
+          // Fetching the data for "Jobs Applied Today" and "Overall Jobs Applied"
+          const todayResponse = await fetch("Src/InstaHyre/todayAppliedJobs.json");
+          const totalResponse = await fetch("Src/InstaHyre/totalAppliedJobs.json");
+          const todayJobs = await todayResponse.json();
+          const totalJobs = await totalResponse.json();
+
+          // Render job data for both sections
+          renderJobs("today", todayJobs);
+          renderJobs("overall", totalJobs);
+
+          // Set the total count based on job data length
+          document.getElementById("todayTotal").textContent = `Total: ${todayJobs.length}`;
+          document.getElementById("overallTotal").textContent = `Total: ${totalJobs.length}`;
+        } catch (error) {
+          console.error("Error fetching job data:", error);
+        }
+      }
+
+      // Function to render job data in table format
+      function renderJobs(type, jobs) {
+        const jobTableBody = document.querySelector(`#${type}JobsTable tbody`);
+
+        // Clear existing table body before adding new data
+        jobTableBody.innerHTML = "";
+
+        // Render each job as a table row
+        jobs.forEach((job) => {
+          const jobRow = document.createElement("tr");
+
+          jobRow.innerHTML = `
+            <td>${job.companyName}</td>
+            <td>${job.role}</td>
+            <td>${job.location}</td>
+            <td>${job.experience}</td>
+            <td>${job.empCount}</td>
+            <td>${job.score}</td>
+            <td>${job.hr}</td>
+            <td>${job.appliedon}</td>
+          `;
+
+          jobTableBody.appendChild(jobRow);
+        });
+      }
+
+      // Switch between tabs and show the relevant section
+      function switchTab(tab) {
+        // Hide all sections
+        const sections = document.querySelectorAll(".section");
+        sections.forEach((section) => section.classList.remove("active-section"));
+
+        // Show the relevant section
+        if (tab === "today") {
+          document.getElementById("todaySection").classList.add("active-section");
+          document.getElementById("overallSection").classList.remove("active-section");
+          document.getElementById("todayTab").classList.add("active");
+          document.getElementById("overallTab").classList.remove("active");
+        } else {
+          document.getElementById("overallSection").classList.add("active-section");
+          document.getElementById("todaySection").classList.remove("active-section");
+          document.getElementById("overallTab").classList.add("active");
+          document.getElementById("todayTab").classList.remove("active");
+        }
+      }
+
+      // Function to get a timestamp for filenames
+      function getTimestamp() {
+        const now = new Date();
+        const date = now.toISOString().split("T")[0]; // Format: YYYY-MM-DD
+        const time = now.toTimeString().split(" ")[0].replace(/:/g, "-"); // Format: HH-MM-SS
+        return `${date}_${time}`;
+      }
+
+      // Download job data as PDF
+      document.getElementById("downloadPdfBtn").addEventListener("click", () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Create a PDF with both tables
+        doc.text("Jobs Applied Today", 14, 20);
+        doc.autoTable({ html: "#todayJobsTable", startY: 30 });
+
+        doc.addPage();
+        doc.text("Overall Jobs Applied", 14, 20);
+        doc.autoTable({ html: "#overallJobsTable", startY: 30 });
+
+        // Save the PDF with a timestamp
+        const filename = `job_applications_tracker_${getTimestamp()}.pdf`;
+        doc.save(filename);
+      });
+
+      // Export job data to Excel
+      document.getElementById("downloadExcelBtn").addEventListener("click", () => {
+        // Create a new Workbook
+        const wb = XLSX.utils.book_new();
+
+        // Add "Jobs Applied Today" table to the workbook
+        const todayTable = document.getElementById("todayJobsTable");
+        const todayData = XLSX.utils.table_to_sheet(todayTable);
+        XLSX.utils.book_append_sheet(wb, todayData, "Jobs Applied Today");
+
+        // Add "Overall Jobs Applied" table to the workbook
+        const overallTable = document.getElementById("overallJobsTable");
+        const overallData = XLSX.utils.table_to_sheet(overallTable);
+        XLSX.utils.book_append_sheet(wb, overallData, "Overall Jobs Applied");
+
+        // Save the Excel file with a timestamp
+        const filename = `job_applications_tracker_${getTimestamp()}.xlsx`;
+        XLSX.writeFile(wb, filename);
+      });
+
+      // Initialize the page by fetching the job data
+      fetchJobsData();
+    </script>
+  </body>
+</html>
