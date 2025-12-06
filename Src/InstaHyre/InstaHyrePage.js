@@ -1,6 +1,9 @@
 const constants = require("./Constants");
 const fs = require("fs");
 const JsonManager = require("../Base/JsonManager");
+const open = (...args) => import('open').then(m => m.default(...args));
+const path = require('path');
+
 class InstaHyrePage {
   constructor(page) {
     this.page = page;
@@ -45,7 +48,7 @@ class InstaHyrePage {
       .locator(`span[ng-if='employer.employee_count']`)
       .textContent();
     let hr = await this.page.locator("span.rec-name").textContent();
-    let score  = await this.page.locator("div.instamatch strong .ng-scope").textContent();
+    let score  = await this.page.locator("div.score-bubble").textContent();
     let appliedon = await this.formatDateTime(new Date());
     this.appliedJobs.push({
       companyName: companyName.trim(),
